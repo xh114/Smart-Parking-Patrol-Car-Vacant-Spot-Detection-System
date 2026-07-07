@@ -1,0 +1,44 @@
+flowchart LR
+  subgraph ELF2_3588 [ELF2-3588 (上位机)]
+    A1[ROS 发布者\n(teleop / planner) ]
+    A2[car_control_node\n(订阅 /cmd_vel, 发布 /car_feedback)]
+    A3[Serial device\n(/dev/ttyUSB0, 115200 8N1)]
+  end
+
+  subgraph STM32 [STM32 小车驱动板]
+    B1[USART3 PNS 解析\n(0xAA 0xBB 0xCC ...)]
+    B2[控制逻辑 / Drive_Motor]
+    B3[RS485 接口 (USART2/6/7)\n(9600, 9E1) ]
+    B4[电机驱动器 (下位)]
+  end
+
+  subgraph ROS_topics [ROS 话题]
+    T1[/cmd_vel (Twist)]
+    T2[/car_feedback (Twist) ]
+  end
+
+  %% 上行命令流程
+  A1 -->|发布 Twist| T1
+  T1 -->|订阅| A2
+  A2 -->|构造 PNS 帧 (控制命令)| A3
+  A3 -.物理串口 TX/RX.-> B1
+  B1 -->|解析命令| B2
+  B2 -->|Modbus/RS485 写寄存器| B3
+  B3 -->|RS485| B4
+
+  %% 反馈流程
+  B4 -->|速度/状态反馈 (RS485)| B3
+  B3 -->|上报给控制逻辑| B2
+  B2 -->|构造 PNS 反馈帧| B1
+  B1 -.PNS over USART3.-> A3
+  A3 -->|serial read| A2
+  A2 -->|发布 Twist 反馈| T2
+  T2 -->|订阅者可读| A1
+
+  %% 注明关键协议与参数
+  classDef proto fill:#fff7e6,stroke:#f39c12;
+  A3,B1,B3 class proto;
+  %% labels
+  A3:::proto
+  B1:::proto
+  B3:::proto

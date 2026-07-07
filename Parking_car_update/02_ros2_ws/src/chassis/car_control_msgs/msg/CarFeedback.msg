@@ -1,0 +1,6 @@
+std_msgs/Header header
+float32 linear_velocity
+float32 angular_velocity
+float32 left_wheel_velocity
+float32 right_wheel_velocity
+uint8 frame_type

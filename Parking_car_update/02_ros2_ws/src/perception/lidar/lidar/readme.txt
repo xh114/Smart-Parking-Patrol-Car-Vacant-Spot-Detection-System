@@ -1,0 +1,3 @@
+开启lidar_node,接收雷达数据
+发布velodyne_points话题，在rviz中订阅/velodyne_points可有点云图
+
